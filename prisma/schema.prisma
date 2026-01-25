@@ -1,0 +1,157 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// User model - supports buyers, artists, and admins
+model User {
+  id           String   @id @default(uuid())
+  role         String   @default("user") // user, artist, admin
+  name         String
+  email        String?  @unique
+  phone        String?  @unique
+  passwordHash String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  artistProfile ArtistProfile?
+  orders        Order[]
+  reviews       Review[]
+}
+
+// Artist Profile - Public information
+model ArtistProfile {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  displayName        String
+  bio                String?
+  city               String?
+  styles             String   // JSON array stored as string
+  deliveryTypes      String   // JSON array stored as string
+  startingPrice      Float
+  profilePhotoUrl    String?
+  verificationStatus String   @default("pending") // pending, approved, rejected
+  isFeatured         Boolean  @default(false)
+  avgRating          Float    @default(0)
+  totalReviews       Int      @default(0)
+  instagramUrl       String?
+  behanceUrl         String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Relations
+  user           User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  privateDetails ArtistPrivateDetails?
+  portfolio      ArtistPortfolio[]
+  packages       Package[]
+  orders         Order[]
+  reviews        Review[]
+}
+
+// Artist Private Details - Never shown publicly
+model ArtistPrivateDetails {
+  id              String  @id @default(uuid())
+  artistProfileId String  @unique
+  fullName        String
+  phone           String?
+  email           String?
+  address         String?
+  identityDocsUrl String?
+
+  // Relations
+  artistProfile ArtistProfile @relation(fields: [artistProfileId], references: [id], onDelete: Cascade)
+}
+
+// Artist Portfolio Images
+model ArtistPortfolio {
+  id              String   @id @default(uuid())
+  artistProfileId String
+  imageUrl        String
+  title           String?
+  createdAt       DateTime @default(now())
+
+  // Relations
+  artistProfile ArtistProfile @relation(fields: [artistProfileId], references: [id], onDelete: Cascade)
+}
+
+// Packages offered by artists
+model Package {
+  id               String   @id @default(uuid())
+  artistProfileId  String
+  name             String
+  description      String
+  deliveryType     String // digital, physical
+  price            Float
+  deliveryTimeText String // e.g., "24-48 hrs"
+  revisionsIncluded Int     @default(1)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Add-on options stored as JSON string
+  addOns           String?  // JSON: { extraPerson: price, detailedBackground: price, expressDelivery: price }
+
+  // Relations
+  artistProfile ArtistProfile @relation(fields: [artistProfileId], references: [id], onDelete: Cascade)
+  orders        Order[]
+}
+
+// Orders
+model Order {
+  id              String   @id @default(uuid())
+  buyerUserId     String
+  artistProfileId String
+  packageId       String
+  status          String   @default("pending_payment") // pending_payment, paid, pending_artist_acceptance, accepted, in_progress, delivered, cancelled, refunded
+  instructions    String?
+  deliveryType    String // digital, physical
+  totalPrice      Float
+  shippingAddress String?
+  addOnsSelected  String?  // JSON string of selected add-ons
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  buyer         User          @relation(fields: [buyerUserId], references: [id])
+  artistProfile ArtistProfile @relation(fields: [artistProfileId], references: [id])
+  package       Package       @relation(fields: [packageId], references: [id])
+  files         OrderFile[]
+  review        Review?
+}
+
+// Order Files (reference photos and delivered work)
+model OrderFile {
+  id        String   @id @default(uuid())
+  orderId   String
+  fileUrl   String
+  fileType  String // reference, delivered
+  createdAt DateTime @default(now())
+
+  // Relations
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+// Reviews
+model Review {
+  id              String   @id @default(uuid())
+  orderId         String   @unique
+  artistProfileId String
+  buyerUserId     String
+  rating          Int // 1-5
+  comment         String?
+  createdAt       DateTime @default(now())
+
+  // Relations
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  artistProfile ArtistProfile @relation(fields: [artistProfileId], references: [id])
+  buyer         User          @relation(fields: [buyerUserId], references: [id])
+}
