@@ -54,7 +54,7 @@ async function getArtists(searchParams: SearchParams) {
     return await prisma.artistProfile.findMany({
         where,
         include: {
-            portfolio: { take: 1 },
+            portfolio: { take: 3 },
             packages: { where: { isActive: true }, take: 1 },
         },
         orderBy,
@@ -89,31 +89,18 @@ export default async function BrowseArtistsPage({
     return (
         <div style={{ minHeight: "100vh", background: "var(--gray-50)" }}>
             {/* Hero Banner */}
-            <div style={{
-                background: "var(--gradient-primary)",
-                color: "white",
-                padding: "3rem 0",
-                textAlign: "center"
-            }}>
+            <div className="browse-header">
                 <div className="container">
-                    <h1 style={{ color: "white", marginBottom: "0.5rem" }}>Browse Artists</h1>
-                    <p style={{ opacity: 0.9 }}>Find the perfect artist for your custom artwork</p>
+                    <h1>Browse Artists</h1>
+                    <p>Find the perfect artist for your custom artwork</p>
                 </div>
             </div>
 
-            <div className="container" style={{ padding: "2rem 1.5rem" }}>
-                <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap" }}>
+            <div className="container">
+                <div className="browse-layout">
                     {/* Filters Sidebar */}
-                    <aside style={{
-                        width: "250px",
-                        background: "white",
-                        padding: "1.5rem",
-                        borderRadius: "var(--radius-xl)",
-                        boxShadow: "var(--shadow-card)",
-                        height: "fit-content",
-                        flexShrink: 0
-                    }}>
-                        <h3 style={{ marginBottom: "1.5rem" }}>Filters</h3>
+                    <aside className="browse-sidebar">
+                        <h3>Filters</h3>
 
                         <form>
                             <div className="form-group">
@@ -145,7 +132,7 @@ export default async function BrowseArtistsPage({
                             </div>
 
                             <div className="form-group">
-                                <label className="form-label">Price Range</label>
+                                <label className="form-label">Price Range (₹)</label>
                                 <div style={{ display: "flex", gap: "0.5rem" }}>
                                     <input
                                         type="number"
@@ -195,35 +182,42 @@ export default async function BrowseArtistsPage({
                             <button type="submit" className="btn btn-primary" style={{ width: "100%" }}>
                                 Apply Filters
                             </button>
+
+                            {(params.category || params.delivery || params.priceMin || params.priceMax || params.city) && (
+                                <Link
+                                    href="/artists"
+                                    className="btn btn-ghost"
+                                    style={{ width: "100%", marginTop: "0.75rem" }}
+                                >
+                                    Clear Filters
+                                </Link>
+                            )}
                         </form>
                     </aside>
 
                     {/* Artists Grid */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            marginBottom: "1.5rem"
-                        }}>
-                            <p className="text-muted">
-                                {artists.length} artist{artists.length !== 1 ? "s" : ""} found
+                    <div>
+                        <div className="browse-results-header">
+                            <p className="browse-count">
+                                <strong>{artists.length}</strong> artist{artists.length !== 1 ? "s" : ""} found
                             </p>
                         </div>
 
                         {artists.length === 0 ? (
-                            <div className="card" style={{ padding: "3rem", textAlign: "center" }}>
-                                <p className="text-muted">No artists found matching your criteria.</p>
-                                <Link href="/artists" className="btn btn-secondary mt-4">
+                            <div className="card empty-state">
+                                <div className="empty-state-icon">🔍</div>
+                                <h3 className="empty-state-title">No artists found</h3>
+                                <p className="empty-state-text">Try adjusting your filters to find more artists.</p>
+                                <Link href="/artists" className="btn btn-secondary">
                                     Clear Filters
                                 </Link>
                             </div>
                         ) : (
-                            <div className="grid-3">
+                            <div className="artists-grid">
                                 {artists.map((artist) => (
                                     <Link key={artist.id} href={`/artists/${artist.id}`}>
                                         <article className="card artist-card">
-                                            <div className="artist-card-image">
+                                            <div className="artist-card-cover">
                                                 <img
                                                     src={artist.portfolio[0]?.imageUrl || "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=400"}
                                                     alt={artist.displayName}
@@ -233,34 +227,50 @@ export default async function BrowseArtistsPage({
                                                     alt={artist.displayName}
                                                     className="artist-card-avatar"
                                                 />
+                                                {artist.isFeatured && (
+                                                    <span className="artist-card-featured tag tag-featured">⭐ Featured</span>
+                                                )}
                                             </div>
                                             <div className="artist-card-body">
-                                                <h3 className="artist-card-name">{artist.displayName}</h3>
+                                                <div className="artist-card-header">
+                                                    <h3 className="artist-card-name">{artist.displayName}</h3>
+                                                    <span className="artist-card-verified" title="Verified Artist">✓</span>
+                                                </div>
                                                 <div className="artist-card-meta">
                                                     <span className="rating">
                                                         <span className="star">★</span>
                                                         <span className="rating-value">{artist.avgRating.toFixed(1)}</span>
                                                         <span className="rating-count">({artist.totalReviews})</span>
                                                     </span>
-                                                    {artist.city && <span>{artist.city}</span>}
+                                                    {artist.city && <span>📍 {artist.city}</span>}
                                                 </div>
                                                 <div className="artist-card-tags">
                                                     {JSON.parse(artist.styles).slice(0, 2).map((style: string) => (
                                                         <span key={style} className="tag">{style}</span>
                                                     ))}
-                                                    {artist.isFeatured && (
-                                                        <span className="tag tag-featured">⭐ Featured</span>
-                                                    )}
                                                 </div>
+                                                {/* Portfolio Preview */}
+                                                {artist.portfolio.length > 0 && (
+                                                    <div className="artist-card-portfolio">
+                                                        {artist.portfolio.slice(0, 3).map((item) => (
+                                                            <div key={item.id} className="artist-card-portfolio-item">
+                                                                <img src={item.imageUrl} alt="Portfolio" />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
                                                 <div className="artist-card-footer">
-                                                    <span className="artist-card-price">
-                                                        ₹{artist.startingPrice} <span>onwards</span>
-                                                    </span>
-                                                    {artist.packages[0] && (
-                                                        <span className="text-muted" style={{ fontSize: "0.875rem" }}>
-                                                            {artist.packages[0].deliveryTimeText}
+                                                    <div>
+                                                        <span className="artist-card-price">
+                                                            ₹{artist.startingPrice} <span>onwards</span>
                                                         </span>
-                                                    )}
+                                                        {artist.packages[0] && (
+                                                            <p className="artist-card-delivery">
+                                                                {artist.packages[0].deliveryTimeText}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <span className="btn btn-primary btn-sm">View</span>
                                                 </div>
                                             </div>
                                         </article>

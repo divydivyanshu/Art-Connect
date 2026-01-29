@@ -4,12 +4,3 @@
 
 [build.environment]
   NEXT_TELEMETRY_DISABLED = "1"
-
-# Enable Netlify's Next.js plugin
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-
-# Environment variables (set these in Netlify dashboard)
-# DATABASE_URL = your-neon-postgresql-url
-# NEXTAUTH_SECRET = your-secret-key
-# NEXTAUTH_URL = https://your-site-name.netlify.app
