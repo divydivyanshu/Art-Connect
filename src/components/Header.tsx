@@ -85,7 +85,7 @@ export function Header() {
                                 </Link>
                                 <button
                                     onClick={() => signOut({ callbackUrl: "/" })}
-                                    className="btn btn-secondary btn-sm"
+                                    className="btn btn-secondary btn-sm desktop-only"
                                 >
                                     Logout
                                 </button>
@@ -98,7 +98,7 @@ export function Header() {
                                 <Link href="/become-artist" className="btn btn-secondary btn-sm desktop-only">
                                     Become an Artist
                                 </Link>
-                                <Link href="/user/signup" className="btn btn-primary btn-sm">
+                                <Link href="/user/signup" className="btn btn-primary btn-sm desktop-only">
                                     Sign Up
                                 </Link>
                             </>
@@ -166,23 +166,40 @@ export function Header() {
                     >
                         Become an Artist
                     </Link>
-                    {isLoggedIn && (
-                        <Link
-                            href={getDashboardLink()}
-                            className="nav-link"
-                            style={{ padding: "1rem 0", borderBottom: "1px solid var(--gray-100)" }}
-                        >
-                            Dashboard
-                        </Link>
-                    )}
-                    {!isLoggedIn && (
-                        <Link
-                            href="/user/login"
-                            className="nav-link"
-                            style={{ padding: "1rem 0", borderBottom: "1px solid var(--gray-100)" }}
-                        >
-                            Login
-                        </Link>
+                    {isLoggedIn ? (
+                        <>
+                            <Link
+                                href={getDashboardLink()}
+                                className="nav-link"
+                                style={{ padding: "1rem 0", borderBottom: "1px solid var(--gray-100)" }}
+                            >
+                                Dashboard
+                            </Link>
+                            <button
+                                onClick={() => signOut({ callbackUrl: "/" })}
+                                className="nav-link text-left"
+                                style={{ padding: "1rem 0", borderBottom: "1px solid var(--gray-100)", width: "100%" }}
+                            >
+                                Logout
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <Link
+                                href="/user/login"
+                                className="nav-link"
+                                style={{ padding: "1rem 0", borderBottom: "1px solid var(--gray-100)" }}
+                            >
+                                Login
+                            </Link>
+                            <Link
+                                href="/user/signup"
+                                className="nav-link"
+                                style={{ padding: "1rem 0", borderBottom: "1px solid var(--gray-100)" }}
+                            >
+                                Sign Up
+                            </Link>
+                        </>
                     )}
                 </nav>
             </div>
